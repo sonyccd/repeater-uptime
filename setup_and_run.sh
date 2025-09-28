@@ -185,6 +185,34 @@ if python3 test_hardware.py; then
         exit 0
     fi
 
+    # Check if GRC file is newer than generated Python file
+    print_status "INFO" "Checking for GNU Radio flowgraph changes..."
+    if [ ! -f "repeater_monitor.py" ] || [ "repeater_monitor.grc" -nt "repeater_monitor.py" ]; then
+        print_status "INFO" "Flowgraph changes detected. Regenerating Python code..."
+        if command_exists grcc; then
+            grcc repeater_monitor.grc
+            if [ $? -eq 0 ]; then
+                print_status "SUCCESS" "Python code regenerated successfully"
+
+                # Fix the parameter issue in generated code
+                if grep -q "activity_threshold=, cooldown_time=, uptime_kuma_url=" repeater_monitor.py; then
+                    print_status "INFO" "Fixing parameter passing in generated code..."
+                    sed -i 's/activity_threshold=, cooldown_time=, uptime_kuma_url=/activity_threshold=self.activity_threshold, cooldown_time=self.cooldown_time, uptime_kuma_url=self.uptime_kuma_url/' repeater_monitor.py
+                    print_status "SUCCESS" "Parameter fix applied"
+                fi
+            else
+                print_status "ERROR" "Failed to regenerate Python code from GRC file"
+                exit 1
+            fi
+        else
+            print_status "ERROR" "grcc (GNU Radio Companion compiler) not found"
+            print_status "INFO" "Please regenerate manually: grcc repeater_monitor.grc"
+            exit 1
+        fi
+    else
+        print_status "SUCCESS" "Generated Python code is up to date"
+    fi
+
     # Start the application
     print_status "INFO" "Starting FM Repeater Monitor..."
     echo "========================================="
