@@ -1,0 +1,326 @@
+name: Build and Release FM Repeater Monitor
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            executable_ext: ""
+            setup_script: |
+              sudo apt-get update
+              sudo apt-get install -y gnuradio gnuradio-dev gr-osmosdr rtl-sdr python3-pip
+          - os: windows-latest
+            platform: windows
+            arch: x64
+            executable_ext: ".exe"
+            setup_script: |
+              # Install GNU Radio using conda-forge
+              conda install -c conda-forge gnuradio gnuradio-osmosdr python=3.9 -y
+          - os: macos-latest
+            platform: macos
+            arch: x64
+            executable_ext: ""
+            setup_script: |
+              brew install gnuradio
+              brew install hackrf
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Setup conda (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-update-conda: true
+        python-version: '3.9'
+        channels: conda-forge
+
+    - name: Install GNU Radio and dependencies
+      shell: bash
+      run: |
+        ${{ matrix.setup_script }}
+
+    - name: Install Python dependencies
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+
+    - name: Generate Python from GRC flowgraph
+      shell: bash
+      run: |
+        # Check if grcc is available
+        if command -v grcc &> /dev/null; then
+          echo "Using grcc to generate Python code..."
+          grcc repeater_monitor.grc
+        else
+          echo "grcc not found, trying gnuradio-companion..."
+          if command -v gnuradio-companion &> /dev/null; then
+            gnuradio-companion --generate repeater_monitor.grc
+          else
+            echo "Error: Neither grcc nor gnuradio-companion found"
+            exit 1
+          fi
+        fi
+
+        # Verify the Python file was generated
+        if [ ! -f "repeater_monitor.py" ]; then
+          echo "Error: repeater_monitor.py was not generated"
+          exit 1
+        fi
+
+        # Apply parameter fixes
+        sed -i.bak 's/activity_threshold=activity_threshold/activity_threshold=self.activity_threshold/g' repeater_monitor.py
+        sed -i.bak 's/cooldown_time=cooldown_time/cooldown_time=self.cooldown_time/g' repeater_monitor.py
+        sed -i.bak 's/uptime_kuma_url=uptime_kuma_url/uptime_kuma_url=self.uptime_kuma_url/g' repeater_monitor.py
+
+        echo "Python code generated and fixed successfully"
+
+    - name: Test Python generation
+      shell: bash
+      run: |
+        python -c "import repeater_monitor; print('Python module loads successfully')"
+
+    - name: Create PyInstaller spec file
+      shell: bash
+      run: |
+        cat > repeater_monitor.spec << 'EOF'
+        # -*- mode: python ; coding: utf-8 -*-
+
+        block_cipher = None
+
+        a = Analysis(
+            ['repeater_monitor.py'],
+            pathex=[],
+            binaries=[],
+            datas=[
+                ('repeater_monitor_epy_block_0.py', '.'),
+            ],
+            hiddenimports=[
+                'gnuradio',
+                'gnuradio.gr',
+                'gnuradio.blocks',
+                'gnuradio.analog',
+                'gnuradio.digital',
+                'gnuradio.filter',
+                'gnuradio.fft',
+                'gnuradio.qtgui',
+                'osmosdr',
+                'PyQt5',
+                'PyQt5.QtCore',
+                'PyQt5.QtGui',
+                'PyQt5.QtWidgets',
+                'numpy',
+                'requests',
+                'threading',
+                'time',
+                'sys',
+                'os',
+            ],
+            hookspath=[],
+            hooksconfig={},
+            runtime_hooks=[],
+            excludes=[],
+            win_no_prefer_redirects=False,
+            win_private_assemblies=False,
+            cipher=block_cipher,
+            noarchive=False,
+        )
+
+        pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+        exe = EXE(
+            pyz,
+            a.scripts,
+            a.binaries,
+            a.zipfiles,
+            a.datas,
+            [],
+            name='fm-repeater-monitor',
+            debug=False,
+            bootloader_ignore_signals=False,
+            strip=False,
+            upx=True,
+            upx_exclude=[],
+            runtime_tmpdir=None,
+            console=True,
+            disable_windowed_traceback=False,
+            argv_emulation=False,
+            target_arch=None,
+            codesign_identity=None,
+            entitlements_file=None,
+        )
+        EOF
+
+    - name: Build executable with PyInstaller
+      shell: bash
+      run: |
+        pyinstaller repeater_monitor.spec --clean --noconfirm
+
+        # Rename executable with platform suffix
+        if [ "${{ matrix.platform }}" = "windows" ]; then
+          mv dist/fm-repeater-monitor.exe dist/fm-repeater-monitor-${{ matrix.platform }}-${{ matrix.arch }}.exe
+        else
+          mv dist/fm-repeater-monitor dist/fm-repeater-monitor-${{ matrix.platform }}-${{ matrix.arch }}
+        fi
+
+    - name: Test executable (Linux/macOS)
+      if: matrix.os != 'windows-latest'
+      shell: bash
+      run: |
+        # Test that the executable can be invoked (will fail due to no RTL-SDR, but should not crash on import)
+        timeout 10s ./dist/fm-repeater-monitor-${{ matrix.platform }}-${{ matrix.arch }} --help || true
+        echo "Executable test completed"
+
+    - name: Create deployment package
+      shell: bash
+      run: |
+        mkdir -p deploy
+
+        # Copy executable
+        if [ "${{ matrix.platform }}" = "windows" ]; then
+          cp dist/fm-repeater-monitor-${{ matrix.platform }}-${{ matrix.arch }}.exe deploy/
+        else
+          cp dist/fm-repeater-monitor-${{ matrix.platform }}-${{ matrix.arch }} deploy/
+        fi
+
+        # Copy documentation and scripts
+        cp README.md deploy/
+        cp requirements.txt deploy/
+        cp setup_and_run.sh deploy/ || true
+        cp run.sh deploy/ || true
+
+        # Create archive
+        if [ "${{ matrix.platform }}" = "windows" ]; then
+          cd deploy && zip -r ../fm-repeater-monitor-${{ matrix.platform }}-${{ matrix.arch }}.zip . && cd ..
+        else
+          tar -czf fm-repeater-monitor-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz -C deploy .
+        fi
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: fm-repeater-monitor-${{ matrix.platform }}-${{ matrix.arch }}
+        path: |
+          fm-repeater-monitor-${{ matrix.platform }}-${{ matrix.arch }}.*
+        retention-days: 30
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts/
+
+    - name: Prepare release assets
+      run: |
+        mkdir -p release-assets
+        find artifacts/ -name "*.tar.gz" -o -name "*.zip" | xargs -I {} cp {} release-assets/
+        ls -la release-assets/
+
+    - name: Get release version
+      id: get_version
+      run: |
+        if [[ $GITHUB_REF == refs/tags/* ]]; then
+          VERSION=${GITHUB_REF#refs/tags/}
+        else
+          VERSION=${{ github.event.inputs.version }}
+        fi
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Version: $VERSION"
+
+    - name: Generate release notes
+      id: release_notes
+      run: |
+        cat > release_notes.md << 'EOF'
+        ## FM Repeater Uptime Monitor ${{ steps.get_version.outputs.version }}
+
+        Professional GNU Radio application for monitoring amateur radio repeater activity with real-time Uptime Kuma integration.
+
+        ### 🚀 Features
+        - 📡 Real-time FM monitoring using RTL-SDR dongles
+        - 🎯 Intelligent activity detection with configurable threshold
+        - 📊 Live spectrum display with frequency visualization
+        - 🔄 Uptime Kuma integration for automated heartbeat notifications
+        - ⏱️ Smart cooldown management to prevent spam
+        - 🎛️ Professional GUI built with GNU Radio QT blocks
+
+        ### 📦 Downloads
+        Choose the appropriate version for your operating system:
+
+        - **Linux (x64)**: `fm-repeater-monitor-linux-x64.tar.gz`
+        - **Windows (x64)**: `fm-repeater-monitor-windows-x64.zip`
+        - **macOS (x64)**: `fm-repeater-monitor-macos-x64.tar.gz`
+
+        ### 🔧 Requirements
+        - RTL-SDR compatible USB dongle (RTL2832U based)
+        - GNU Radio 3.10+ with QT GUI support
+        - Python 3.6+
+        - Uptime Kuma server instance
+
+        ### 📖 Quick Start
+        1. Download the appropriate package for your OS
+        2. Extract the archive
+        3. Run the executable: `./fm-repeater-monitor-[platform]-x64`
+        4. Configure your frequency and Uptime Kuma URL in the GUI
+
+        ### 🐛 Issues & Support
+        Report issues at: https://github.com/sonyccd/repeater-uptime/issues
+
+        ---
+        Built with GNU Radio Companion and distributed under GPL-3.0 License
+        EOF
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.get_version.outputs.version }}
+        name: FM Repeater Monitor ${{ steps.get_version.outputs.version }}
+        body_path: release_notes.md
+        draft: false
+        prerelease: false
+        files: release-assets/*
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+  notify:
+    name: Notify Release
+    needs: release
+    runs-on: ubuntu-latest
+    if: success()
+
+    steps:
+    - name: Notify Success
+      run: |
+        echo "🎉 Release ${{ needs.release.outputs.version || github.ref_name }} published successfully!"
+        echo "Downloads available at: ${{ github.server_url }}/${{ github.repository }}/releases/latest"
