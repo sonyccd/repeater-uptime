@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FM Repeater Uptime Monitor</title>
+    <meta name="description" content="A GNU Radio QT GUI application that monitors FM repeater activity using RTL-SDR and sends heartbeats to an Uptime Kuma server">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1 class="hero-title">FM Repeater Uptime Monitor</h1>
+                    <p class="hero-subtitle">Professional GNU Radio application for monitoring amateur radio repeater activity with real-time Uptime Kuma integration</p>
+                    <div class="hero-badges">
+                        <span class="badge">GNU Radio 3.10+</span>
+                        <span class="badge">RTL-SDR Compatible</span>
+                        <span class="badge">Python 3.6+</span>
+                        <span class="badge">GPL-3.0</span>
+                    </div>
+                    <div class="hero-actions">
+                        <a href="https://github.com/yourusername/repeater-uptime" class="btn btn-primary">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                            View on GitHub
+                        </a>
+                        <a href="#quick-start" class="btn btn-secondary">Quick Start</a>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <div class="app-mockup">
+                        <div class="mockup-header">
+                            <div class="mockup-controls">
+                                <span class="control red"></span>
+                                <span class="control yellow"></span>
+                                <span class="control green"></span>
+                            </div>
+                            <span class="mockup-title">FM Repeater Uptime Monitor</span>
+                        </div>
+                        <div class="mockup-content">
+                            <div class="control-panel">
+                                <div class="control-row">
+                                    <label>Frequency: 146.52 MHz</label>
+                                    <div class="slider"></div>
+                                </div>
+                                <div class="control-row">
+                                    <label>RF Gain: 20</label>
+                                    <div class="slider"></div>
+                                </div>
+                                <div class="control-row">
+                                    <label>Threshold: -30 dBFS</label>
+                                    <div class="slider"></div>
+                                </div>
+                            </div>
+                            <div class="spectrum-display">
+                                <div class="spectrum-line"></div>
+                                <div class="spectrum-line"></div>
+                                <div class="spectrum-line"></div>
+                                <div class="spectrum-line"></div>
+                            </div>
+                            <div class="status-panel">
+                                <div class="status-item">
+                                    <span class="status-dot active"></span>
+                                    <span>Activity: DETECTED</span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="status-dot"></span>
+                                    <span>Last Heartbeat: 14:23:15</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="features">
+            <div class="container">
+                <h2 class="section-title">Professional RF Monitoring</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">📡</div>
+                        <h3>Real-time FM Monitoring</h3>
+                        <p>Monitor amateur radio repeaters using RTL-SDR dongles with professional GNU Radio signal processing</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🎯</div>
+                        <h3>Smart Activity Detection</h3>
+                        <p>Intelligent signal threshold detection with configurable sensitivity and automatic noise floor adaptation</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📊</div>
+                        <h3>Live Spectrum Display</h3>
+                        <p>Real-time frequency domain visualization with waterfall display and signal strength meters</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔄</div>
+                        <h3>Uptime Kuma Integration</h3>
+                        <p>Seamless integration with Uptime Kuma for automated heartbeat notifications and uptime tracking</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">⏱️</div>
+                        <h3>Smart Cooldown</h3>
+                        <p>Intelligent cooldown management prevents spam during long conversations while ensuring reliable monitoring</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🎛️</div>
+                        <h3>Professional GUI</h3>
+                        <p>Built with native GNU Radio QT blocks for a professional, responsive user interface</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="quick-start" class="quick-start">
+            <div class="container">
+                <h2 class="section-title">Quick Start</h2>
+                <div class="quick-start-content">
+                    <div class="quick-start-text">
+                        <p>Get up and running in minutes with our automated setup script. The installer handles all dependencies, tests your hardware, and launches the application.</p>
+                        <div class="setup-steps">
+                            <div class="step">
+                                <span class="step-number">1</span>
+                                <div class="step-content">
+                                    <h4>Clone Repository</h4>
+                                    <p>Download the latest version from GitHub</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <span class="step-number">2</span>
+                                <div class="step-content">
+                                    <h4>Run Setup</h4>
+                                    <p>Automated installation and hardware testing</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <span class="step-number">3</span>
+                                <div class="step-content">
+                                    <h4>Configure & Monitor</h4>
+                                    <p>Set your frequency and start monitoring</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">Terminal</span>
+                            <button class="copy-btn" onclick="copyCode()">Copy</button>
+                        </div>
+                        <pre><code id="install-code"># Clone the repository
+git clone https://github.com/yourusername/repeater-uptime.git
+cd repeater-uptime
+
+# Automated setup and run
+./setup_and_run.sh
+
+# Quick run (after setup)
+./run.sh</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="architecture">
+            <div class="container">
+                <h2 class="section-title">GNU Radio Companion Architecture</h2>
+                <div class="architecture-content">
+                    <div class="architecture-diagram">
+                        <div class="signal-flow">
+                            <div class="flow-step">
+                                <div class="flow-icon">📡</div>
+                                <span>RTL-SDR</span>
+                                <small>2.048 MHz</small>
+                            </div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-step">
+                                <div class="flow-icon">🔽</div>
+                                <span>Low-Pass</span>
+                                <small>256 kHz</small>
+                            </div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-step">
+                                <div class="flow-icon">📻</div>
+                                <span>FM Demod</span>
+                                <small>Audio</small>
+                            </div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-step">
+                                <div class="flow-icon">📊</div>
+                                <span>Power</span>
+                                <small>dBFS</small>
+                            </div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-step">
+                                <div class="flow-icon">🌐</div>
+                                <span>Heartbeat</span>
+                                <small>HTTP</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="architecture-text">
+                        <h3>Professional Signal Processing</h3>
+                        <p>Built using GNU Radio Companion for professional-grade RF signal processing. The visual flowgraph design enables easy modification and extension while maintaining optimal performance.</p>
+                        <ul>
+                            <li>Visual flowgraph design with drag-and-drop blocks</li>
+                            <li>Automatic Python generation from GRC files</li>
+                            <li>Native QT GUI integration without compatibility issues</li>
+                            <li>Embedded Python blocks for custom functionality</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="requirements">
+            <div class="container">
+                <h2 class="section-title">System Requirements</h2>
+                <div class="requirements-grid">
+                    <div class="requirement-card">
+                        <h3>Hardware</h3>
+                        <ul>
+                            <li>RTL-SDR compatible USB dongle (RTL2832U based)</li>
+                            <li>USB 2.0 or higher port</li>
+                            <li>Adequate antenna for target frequency</li>
+                        </ul>
+                    </div>
+                    <div class="requirement-card">
+                        <h3>Software</h3>
+                        <ul>
+                            <li>GNU Radio 3.10+ with QT GUI support</li>
+                            <li>Python 3.6+</li>
+                            <li>gr-osmosdr for RTL-SDR support</li>
+                            <li>PyQt5 for GUI components</li>
+                        </ul>
+                    </div>
+                    <div class="requirement-card">
+                        <h3>Operating System</h3>
+                        <ul>
+                            <li>Linux (Ubuntu 24.04 tested)</li>
+                            <li>Windows (with GNU Radio installation)</li>
+                            <li>macOS (with appropriate drivers)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Project</h4>
+                    <ul>
+                        <li><a href="https://github.com/yourusername/repeater-uptime">GitHub Repository</a></li>
+                        <li><a href="https://github.com/yourusername/repeater-uptime/releases">Releases</a></li>
+                        <li><a href="https://github.com/yourusername/repeater-uptime/issues">Issues</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul>
+                        <li><a href="https://github.com/yourusername/repeater-uptime/blob/main/README.md">User Guide</a></li>
+                        <li><a href="https://github.com/yourusername/repeater-uptime/blob/main/CLAUDE.md">Developer Guide</a></li>
+                        <li><a href="#requirements">Requirements</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Community</h4>
+                    <ul>
+                        <li><a href="https://github.com/yourusername/repeater-uptime/discussions">Discussions</a></li>
+                        <li><a href="https://github.com/yourusername/repeater-uptime/wiki">Wiki</a></li>
+                        <li><a href="mailto:your-email@example.com">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>License</h4>
+                    <p>Released under the <a href="https://github.com/yourusername/repeater-uptime/blob/main/LICENSE">GPL-3.0 License</a></p>
+                    <p>© 2025 Brad Bazemore</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
