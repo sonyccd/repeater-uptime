@@ -66,7 +66,18 @@ jobs:
       shell: bash
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        # Handle externally managed environments
+        if python -m pip install -r requirements.txt 2>&1 | grep -q "externally-managed-environment"; then
+          echo "Creating virtual environment due to externally managed environment..."
+          python -m venv build_venv
+          source build_venv/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          echo "VIRTUAL_ENV_ACTIVE=true" >> $GITHUB_ENV
+          echo "$(pwd)/build_venv/bin" >> $GITHUB_PATH
+        else
+          pip install -r requirements.txt
+        fi
         pip install pyinstaller
 
     - name: Generate Python from GRC flowgraph

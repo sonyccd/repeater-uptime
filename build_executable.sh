@@ -68,14 +68,24 @@ else
     print_status "Python code is up to date"
 fi
 
-# Step 2: Install dependencies
-print_status "Installing/updating Python dependencies..."
-python3 -m pip install --upgrade pip
-python3 -m pip install -r requirements.txt
+# Step 2: Set up virtual environment and install dependencies
+VENV_DIR="build_venv"
+
+if [ ! -d "$VENV_DIR" ]; then
+    print_status "Creating virtual environment..."
+    python3 -m venv "$VENV_DIR"
+else
+    print_status "Using existing virtual environment..."
+fi
+
+print_status "Activating virtual environment and installing dependencies..."
+source "$VENV_DIR/bin/activate"
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 
 # Step 3: Test Python module
 print_status "Testing Python module import..."
-if python3 -c "import repeater_monitor; print('Module loads successfully')" 2>/dev/null; then
+if python -c "import repeater_monitor; print('Module loads successfully')" 2>/dev/null; then
     print_success "Python module imports successfully"
 else
     print_error "Python module failed to import"
@@ -206,4 +216,9 @@ print_status "Cleaning up temporary files..."
 rm -f *.bak
 rm -f repeater_monitor.spec
 
+# Deactivate virtual environment
+deactivate
+
 print_success "Build process completed!"
+print_status "Virtual environment preserved at: $VENV_DIR"
+print_status "To clean up: rm -rf $VENV_DIR"
